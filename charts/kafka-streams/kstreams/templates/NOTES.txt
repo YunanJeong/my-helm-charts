@@ -1,2 +1,2 @@
 # Kafka Streams Helm Chart Release
-- 연결 대상 Kafka : {{ .Values.streams.kafka.server }}
+- 연결 대상 Kafka : {{ .Values.kafkaConnection.bootstrapServers }}

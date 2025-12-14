@@ -1,29 +1,41 @@
-streams:
-  replicas: 1
-  podAnnotations: {}
-  affinity: {}
-  tolerations: {}
-  resources: {}
-  
-  # e.g.)
-  # nodeSelector:
-  #   alpaka/node-type: worker
-  nodeSelector: {}
-  
-  # Your Streams App.
-  image:
-    registry: ""
-    repository: "library/streams"
-    tag: latest
+replicas: 1
+podAnnotations: {}
+affinity: {}
+tolerations: {}
+resources: {}
 
-  env:
-    TZ: Asia/Seoul
-    # MY_KEY: ${MY_SECRET_KEY}
-  
-  kafka: 
-    # Your Kafka Broker API
-    server: "testbed-kafka-headless:9092"
-    readinessCheck:
-      enabled: false
-      image: bitnami/kafka:latest
-      
+# e.g.)
+# nodeSelector:
+#   alpaka/node-type: worker
+nodeSelector: {}
+
+# Your Streams App.
+image:
+  registry: ""
+  repository: "library/streams"
+  tag: latest
+
+env:
+  TZ: Asia/Seoul
+  # MY_KEY: ${MY_SECRET_KEY}
+
+# Maps to Kafka Streams `application.id`
+applicationId: "streams-consumer-group-name"
+
+kafkaConnection: 
+  # Kafka `bootstrap.servers`
+  bootstrapServers: "test-kafka:9092"
+  readinessCheck:
+    enabled: false
+    image: bitnami/kafka:latest
+
+# Extra Kafka client properties for Streams (env: STREAMS_*).
+# e.g. `producer.max.request.size` -> `STREAMS_PRODUCER_MAX_REQUEST_SIZE`
+kafkaClientOverrides: {}
+  # consumer.auto.offset.reset: "earliest"  # earliest(default), latest
+  # auto.offset.reset: "earliest"           # used if consumer.auto.offset.reset not set
+  # producer.compression.type: none         # none(default), gzip, snappy, lz4, zstd 
+  # consumer.fetch.max.bytes: "1048576"     
+  # consumer.max.partition.fetch.bytes: 1048576
+  # producer.max.request.size: "1048576"
+  # ...

@@ -5,13 +5,13 @@ metadata:
   labels:
     {{- include "kstreams.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.streams.replicas }}
+  replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
       {{- include "kstreams.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.streams.podAnnotations }}
+      {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -20,36 +20,63 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}-app
-          image: '{{ include "kstreams.image" .Values.streams.image }}'
+          image: '{{ include "kstreams.image" .Values.image }}'
           imagePullPolicy: IfNotPresent
-          env:  # 전달할 환경변수
-            {{- range $env_key, $env_value := .Values.streams.env }}
-            - name: {{ $env_key }}
-              value: {{ tpl ($env_value | quote) $ }} 
+          env:
+            # 일반 환경변수 할당
+            {{- /* user env에서 STREAMS_* 예약어 충돌 방지 */ -}}
+            {{- $envDict := (default dict .Values.env) -}}
+            {{- range $key, $_ := $envDict -}}
+              {{- if hasPrefix "STREAMS_" $key -}}
+                {{- fail (printf "env.%s: Do not use STREAMS_ prefix here (STREAMS_* is reserved for kafkaClientOverrides)" $key) -}}
+              {{- end -}}
+            {{- end -}}
+            {{- range $key, $value := $envDict }}
+            - name: {{ $key }}
+              value: {{ tpl ($value | toString) $ | quote }}
             {{- end }}
-            - name: KAFKA_BROKER
-              value: {{ .Values.streams.kafka.server }}
-          {{- with .Values.streams.resources }}
+            # STREAMS 필수 속성을 환경변수로 전달
+            {{- /* 스트림즈 앱 개발 자유도를 위해 helm 레벨에서 강제(required)하진 않고 with으로 값 있을 때만 할당 */ -}}
+            {{- with .Values.kafkaConnection.bootstrapServers }}
+            - name: STREAMS_BOOTSTRAP_SERVERS
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.applicationId }}
+            - name: STREAMS_APPLICATION_ID
+              value: {{ . | quote }}
+            {{- end }}
+            # Kafka Client Overrides를 변환 후 환경변수로 전달
+            {{- /* kafkaClientOverrides에 필수 속성이 들어오면 충돌나니 금지 */ -}}
+            {{- $overrides := (default dict .Values.kafkaClientOverrides) -}}
+            {{- if hasKey $overrides "application.id" -}}{{- fail "kafkaClientOverrides must not contain application.id (use applicationId)" -}}{{- end -}}
+            {{- if hasKey $overrides "bootstrap.servers" -}}{{- fail "kafkaClientOverrides must not contain bootstrap.servers (use kafkaConnection.bootstrapServers)" -}}{{- end -}}
+            {{- range $key, $value := $overrides }}
+            - name: STREAMS_{{ $key | upper | replace "." "_" }}
+              value: {{ $value | quote }}
+            {{- end }}
+
+
+          {{- with .Values.resources }}
           resources:
-            {{- toYaml .Values.streams.resources | nindent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
           {{- end }}
-      {{- with .Values.streams.nodeSelector }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.streams.affinity }}
+      {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.streams.tolerations }}
+      {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
 
-      {{- if .Values.streams.kafka.readinessCheck.enabled }}
+      {{- if .Values.kafkaConnection.readinessCheck.enabled }}
       initContainers:
         - name: waits-for-kafka
-          image: {{ .Values.streams.kafka.readinessCheck.image }}
+          image: {{ .Values.kafkaConnection.readinessCheck.image }}
           imagePullPolicy: IfNotPresent
           command: 
             - bash 
@@ -58,7 +85,7 @@ spec:
               # wait for kafka broker and source topic to be ready
               sleep 10
               while true; do
-                EXISTING_TOPICS=$(kafka-topics.sh --bootstrap-server {{ .Values.streams.kafka.server }} --list 2> /dev/null)
+                EXISTING_TOPICS=$(kafka-topics.sh --bootstrap-server {{ .Values.kafkaConnection.bootstrapServers }} --list 2> /dev/null)
                 if [ $? -ne 0 ]; then
                   echo "Kafka broker not ready. retrying..."
                   sleep 5
