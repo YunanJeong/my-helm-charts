@@ -1,2 +1,4 @@
 # Kafka Streams Helm Chart Release
-- 연결 대상 Kafka : {{ .Values.kafkaConnection.bootstrapServers }}
+applicationId: {{ .Values.applicationId | default "(not set)" }}
+bootstrapServers: {{ .Values.kafkaConnection.bootstrapServers | default "(not set)" }}
+kafkaClientOverrides: {{- if .Values.kafkaClientOverrides }} (set){{- else }} (none){{- end }}
