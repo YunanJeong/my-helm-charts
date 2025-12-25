@@ -36,6 +36,6 @@ kafkaClientOverrides: {}
   # auto.offset.reset: "earliest"           # used if consumer.auto.offset.reset not set
   # producer.compression.type: none         # none(default), gzip, snappy, lz4, zstd 
   # consumer.fetch.max.bytes: "1048576"     
-  # consumer.max.partition.fetch.bytes: 1048576
+  # consumer.max.partition.fetch.bytes: "1048576"
   # producer.max.request.size: "1048576"
   # ...

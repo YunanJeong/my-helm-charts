@@ -33,7 +33,7 @@ spec:
             {{- end -}}
             {{- range $key, $value := $envDict }}
             - name: {{ $key }}
-              value: {{ tpl ($value | toString) $ | quote }}
+              value: {{ tpl (include "kstreams.mustBeString" $value) $ }}
             {{- end }}
             # STREAMS 필수 속성을 환경변수로 전달
             {{- /* 스트림즈 앱 개발 자유도를 위해 helm 레벨에서 강제(required)하진 않고 with으로 값 있을 때만 할당 */ -}}
@@ -52,9 +52,8 @@ spec:
             {{- if hasKey $overrides "bootstrap.servers" -}}{{- fail "kafkaClientOverrides must not contain bootstrap.servers (use kafkaConnection.bootstrapServers)" -}}{{- end -}}
             {{- range $key, $value := $overrides }}
             - name: STREAMS_{{ $key | upper | replace "." "_" }}
-              value: {{ $value | quote }}
+              value: {{ include "kstreams.mustBeString" $value }}
             {{- end }}
-
 
           {{- with .Values.resources }}
           resources:
