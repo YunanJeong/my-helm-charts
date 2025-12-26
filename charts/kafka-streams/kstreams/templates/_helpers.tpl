@@ -76,3 +76,16 @@ Usage:
     @{{ .digest }}
   {{- end }}
 {{- end -}}
+
+{{/*
+Require string input.
+Prevent scientific notation of big numbers.(1e+06)
+Use this instead of "| quote".
+*/}}
+{{- define "kstreams.mustBeString" -}}
+{{- if not (kindIs "string" .) -}}
+{{- fail (printf "String Input Required. 숫자값(%v)에 따옴표 쓰세용. " . ) -}}
+{{- end -}}
+{{- . -}}
+{{- end -}}
+

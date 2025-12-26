@@ -1,2 +1,6 @@
 # Kafka Streams Helm Chart Release
-- 연결 대상 Kafka : {{ .Values.streams.kafka.server }}
+applicationId: {{ .Values.applicationId | default "(not set)" }}
+bootstrapServers: {{ .Values.kafkaConnection.bootstrapServers | default "(not set)" }}
+{{- with .Values.kafkaClientOverrides }}
+kafkaClientOverrides: {{ toYaml . | nindent 2 }}
+{{- end }}
