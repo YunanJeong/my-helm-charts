@@ -84,7 +84,7 @@ Use this instead of "| quote".
 */}}
 {{- define "kstreams.mustBeString" -}}
 {{- if not (kindIs "string" .) -}}
-{{- fail (printf "String Input Required. %v를 문자열로 쓰세용. " . ) -}}
+{{- fail (printf "String Input Required. 숫자값(%v)에 따옴표 쓰세용. " . ) -}}
 {{- end -}}
 {{- . -}}
 {{- end -}}
