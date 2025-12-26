@@ -1,4 +1,6 @@
 # Kafka Streams Helm Chart Release
 applicationId: {{ .Values.applicationId | default "(not set)" }}
 bootstrapServers: {{ .Values.kafkaConnection.bootstrapServers | default "(not set)" }}
-kafkaClientOverrides: {{- if .Values.kafkaClientOverrides }} (set){{- else }} (none){{- end }}
+{{- with .Values.kafkaClientOverrides }}
+kafkaClientOverrides: {{ toYaml . | nindent 2 }}
+{{- end }}
